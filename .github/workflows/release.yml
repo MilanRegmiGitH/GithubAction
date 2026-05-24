@@ -1,0 +1,54 @@
+name: Create Release
+
+on:
+  push:
+    tags: 
+      - "v*"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Tests
+        run: pytest
+
+      - name: Package App (example zip)
+        run: |
+          mkdir dist
+          cp -r . dist/
+          zip -r app.zip dist/
+
+      - name: Upload artifact
+        uses: actions/Upload-artifact@v4
+        with:
+          name: app
+          path: app.zip
+
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app
+
+      - name: Create Github Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: app.zip
+          generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN}}
+
